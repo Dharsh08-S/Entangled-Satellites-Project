@@ -1,0 +1,4 @@
+qiskit>=1.0
+qiskit-aer>=0.15
+numpy>=1.26
+PySide6>=6.6

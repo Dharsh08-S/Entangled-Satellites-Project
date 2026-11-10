@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#02040a">
+  <meta name="description" content="3D simulator of quantum entanglement links between satellites, the Moon, Mars and ground stations.">
+  <title>Quantum Space Lab</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="astronomy.browser.min.js"></script>
+  <script type="importmap">
+    { "imports": { "three": "./three.module.js" } }
+  </script>
+</head>
+<body>
+  <div id="viewport"></div>
+
+  <div id="loading"><div class="ring"></div><div>Loading the solar system…</div></div>
+
+  <!-- ===================== top bar ===================== -->
+  <header id="topbar">
+    <div class="brand"><span class="logo"></span>QUANTUM<b>SPACE</b>LAB</div>
+    <div class="timebox">
+      <button id="clock" class="clock" title="Set date and time">—</button>
+      <input id="clock-input" type="datetime-local">
+      <div class="seg">
+        <button id="btn-reverse" title="Reverse time">⇄</button>
+        <button id="btn-slower" title="Slower (−)">−</button>
+        <button id="btn-play" title="Pause / play (Space)">❚❚</button>
+        <button id="btn-faster" title="Faster (+)">+</button>
+      </div>
+      <span id="warp" class="warp">×60</span>
+      <button id="btn-now" class="ghost">Now</button>
+    </div>
+    <div class="viewbox">
+      <label class="focus">Focus <select id="focus"></select></label>
+      <div class="seg">
+        <button data-scale="cinematic" class="on" title="Distances compressed so everything fits in view">Cinematic</button>
+        <button data-scale="true" title="Real distances and sizes">True scale</button>
+      </div>
+      <div class="seg">
+        <button id="tg-labels" class="on">Labels</button>
+        <button id="tg-orbits" class="on">Orbits</button>
+        <button id="tg-big" class="on" title="Enlarge spacecraft when far away">Big craft</button>
+      </div>
+      <button id="btn-lab" class="accent">&lt;/&gt; Code Lab</button>
+      <button id="btn-panels" class="ghost" title="Hide panels">⛶</button>
+    </div>
+  </header>
+
+  <!-- ===================== left panel ===================== -->
+  <aside id="left" class="panel">
+    <nav class="tabs">
+      <button class="tab on" data-page="pg-fleet">Fleet</button>
+      <button class="tab" data-page="pg-add">Add</button>
+      <button class="tab" data-page="pg-phys">Physics</button>
+    </nav>
+
+    <section id="pg-fleet" class="tabpage on">
+      <h4>Satellites</h4><div id="list-sats" class="list"></div>
+      <h4>Ground stations</h4><div id="list-ground" class="list"></div>
+      <h4>Quantum links</h4><div id="list-links" class="list"></div>
+      <div class="btnrow">
+        <button id="btn-save">Save</button>
+        <button id="btn-export" class="ghost">Export</button>
+        <label class="ghost filebtn">Import<input id="file-import" type="file" accept=".json"></label>
+        <button id="btn-reset" class="ghost">Reset</button>
+      </div>
+    </section>
+
+    <section id="pg-add" class="tabpage">
+      <details open>
+        <summary>Launch a satellite</summary>
+        <form id="form-sat" class="form">
+          <label class="wide">Orbit preset <select id="sat-preset"></select></label>
+          <label class="wide">Name <input id="sat-name" placeholder="QS-Gamma"></label>
+          <label>Orbits <select id="sat-parent"><option>Earth</option><option>Moon</option><option>Mars</option></select></label>
+          <label>Colour <input id="sat-color" type="color"></label>
+          <label>Altitude (km) <input id="sat-alt" type="number" step="any"></label>
+          <label>Inclination (°) <input id="sat-inc" type="number" step="any"></label>
+          <label>RAAN (°) <input id="sat-raan" type="number" step="any" value="0"></label>
+          <label>Phase (°) <input id="sat-phase" type="number" step="any" value="0"></label>
+          <label class="wide">Stationary longitude (°) <input id="sat-geolon" type="number" step="any" placeholder="empty = normal orbit"></label>
+          <label>Transmit Ø (m) <input id="sat-tx" type="number" step="any" value="0.1"></label>
+          <label>Receive Ø (m) <input id="sat-rx" type="number" step="any" value="0.3"></label>
+          <label class="wide">Entangled-pair source (million pairs/s) <input id="sat-rate" type="number" step="any" value="100"></label>
+          <button class="accent wide">Launch satellite</button>
+        </form>
+      </details>
+      <details>
+        <summary>Build a ground station</summary>
+        <form id="form-gs" class="form">
+          <label class="wide">Site <select id="gs-preset"></select></label>
+          <label class="wide">Name <input id="gs-name"></label>
+          <label>Latitude (°) <input id="gs-lat" type="number" step="any"></label>
+          <label>Longitude (°) <input id="gs-lon" type="number" step="any"></label>
+          <label>Altitude (km) <input id="gs-altkm" type="number" step="any"></label>
+          <label>Colour <input id="gs-color" type="color" value="#7dff9b"></label>
+          <label>Transmit Ø (m) <input id="gs-tx" type="number" step="any" value="0.3"></label>
+          <label>Receive Ø (m) <input id="gs-rx" type="number" step="any" value="1.0"></label>
+          <button class="accent wide">Build ground station</button>
+        </form>
+      </details>
+      <details open>
+        <summary>Create a quantum link</summary>
+        <form id="form-link" class="form">
+          <label class="wide">Source (sends the entangled photons) <select id="ln-from"></select></label>
+          <label class="wide">Receiver <select id="ln-to"></select></label>
+          <button class="accent wide">Create link</button>
+        </form>
+      </details>
+    </section>
+
+    <section id="pg-phys" class="tabpage">
+      <p class="hint">Hardware and environment settings used by every link. Telemetry always uses true distances.</p>
+      <div id="physics-sliders"></div>
+      <button id="btn-phys-reset" class="ghost">Reset to defaults</button>
+    </section>
+  </aside>
+
+  <!-- ===================== right panel ===================== -->
+  <aside id="right" class="panel">
+    <div id="telemetry">
+      <div class="tl-head">
+        <div class="eyebrow">Selected quantum link</div>
+        <div id="tl-name" class="tl-name">—</div>
+        <span id="tl-status" class="pill">—</span>
+      </div>
+      <div class="bigS">
+        <div><div class="eyebrow">CHSH value S</div><div id="tl-S" class="Sval">—</div></div>
+        <div class="gauge"><div id="gauge-fill"></div><i class="m2" title="classical limit 2"></i></div>
+        <div class="gauge-scale"><span>0</span><span>2 classical</span><span>2.83</span></div>
+      </div>
+      <canvas id="chart"></canvas>
+      <div id="tl-rows" class="kv"></div>
+      <div class="exp">
+        <div class="eyebrow">Quantum experiments</div>
+        <div class="btnrow">
+          <button id="btn-bell" class="accent">Bell test</button>
+          <button id="btn-e91" class="accent">E91 key exchange</button>
+        </div>
+        <div class="btnrow small">
+          <label>Pairs <input id="e91-pairs" type="number" value="4000" min="200" max="50000" step="200"></label>
+          <label>Eavesdropper
+            <select id="e91-eve"><option value="0">none</option><option value="0.25">25 %</option><option value="0.5">50 %</option><option value="1">100 %</option></select>
+          </label>
+        </div>
+        <pre id="exp-out" class="out"></pre>
+      </div>
+    </div>
+    <div class="foot"><span id="backend">…</span><span class="keys">Space pause · +/− speed · double-click to fly</span></div>
+  </aside>
+
+  <!-- ===================== code lab ===================== -->
+  <section id="lab" class="panel">
+    <div class="lab-head">
+      <b>&lt;/&gt; Quantum Code Lab</b><span class="hint">Python + Qiskit · <code>link</code> = selected link · Ctrl+Enter to run</span>
+      <span id="lab-status" class="lab-status"></span>
+      <button id="btn-run" class="accent">▶ Run</button>
+      <button id="btn-lab-close" class="ghost">✕</button>
+    </div>
+    <div class="lab-body">
+      <textarea id="code" spellcheck="false"></textarea>
+      <pre id="lab-out" class="out">Output appears here.</pre>
+    </div>
+  </section>
+
+  <!-- phone tab bar -->
+  <nav id="mnav">
+    <button data-m="view" class="on"><span>◉</span>View</button>
+    <button data-m="fleet"><span>☰</span>Fleet</button>
+    <button data-m="link"><span>⟿</span>Link</button>
+    <button data-m="lab"><span>&lt;/&gt;</span>Code</button>
+  </nav>
+
+  <div id="toast"></div>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
