@@ -9,7 +9,7 @@ A 3D simulator for **quantum entanglement links between satellites, the Moon, Ma
 
 ## ▶ Try it now (no install, works on phones)
 
-**Live app: https://dharsh08-s.github.io/entangled-satellites-project/**
+**Live app: https://dharsh08-s.github.io/Entangled-Satellites-Project/**
 
 The web version runs entirely in the browser: 3D view, link physics, Bell test and E91 key exchange.
 The **Code Lab** (your own Qiskit code) needs the desktop version below.
